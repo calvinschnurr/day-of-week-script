@@ -1,0 +1,67 @@
+// The script trims budget on weekends and spends the extra amount on Mondays
+
+function main() {
+  adjustCampaignBudgets();
+  adjustSharedBudgets();
+}
+
+// Function to adjust individual campaign budgets
+function adjustCampaignBudgets() {
+  var campaignNames = ['Campaign Name'];  // Replace with the names of the campaigns you want to adjust
+
+  var adjustments = getDayAdjustments();
+
+  var campaignIterator = AdsApp.campaigns()
+      .withCondition('Name IN ["' + campaignNames.join('","') + '"]')
+      .get();
+
+  while (campaignIterator.hasNext()) {
+    var campaign = campaignIterator.next();
+    var campaignBudget = campaign.getBudget();
+    var currentBudgetAmount = campaignBudget.getAmount();
+    var newBudgetAmount = currentBudgetAmount * adjustments;
+
+    campaignBudget.setAmount(newBudgetAmount);
+    Logger.log('Campaign "' + campaign.getName() + '" budget adjusted to: ' + newBudgetAmount);
+  }
+}
+
+// Function to adjust shared budgets
+function adjustSharedBudgets() {
+  var sharedBudgetNames = ['Shared Budget'];  // Add your shared budget names here
+
+  var adjustments = getDayAdjustments();
+
+  var budgetIterator = AdsApp.budgets().get();
+
+  while (budgetIterator.hasNext()) {
+    var budget = budgetIterator.next();
+    var budgetName = budget.getName();
+
+    if (sharedBudgetNames.indexOf(budgetName) !== -1) {
+      var currentBudgetAmount = budget.getAmount();
+      var newBudgetAmount = currentBudgetAmount * adjustments;
+
+      budget.setAmount(newBudgetAmount);
+      Logger.log('Shared budget "' + budgetName + '" adjusted to: ' + newBudgetAmount);
+    }
+  }
+}
+
+// Function to get the adjustment percentage based on the current day
+function getDayAdjustments() {
+  var adjustments = {
+    'Sunday': 1.00,
+    'Monday': 1.33333,
+    'Tuesday': 0.83334,
+    'Wednesday': 1.00,
+    'Thursday': 1.00,
+    'Friday': 1.00,
+    'Saturday': 0.90
+  };
+
+  var today = new Date();
+  var dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][today.getDay()];
+
+  return adjustments[dayName];
+}
